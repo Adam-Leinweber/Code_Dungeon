@@ -6,9 +6,6 @@ class BasicLexer(Lexer):
                PLUS, MINUS, TIMES, DIVIDE, ASSIGN,
                EQ, LT, LEQ, GT, GEQ, NEQ } 
     ignore = '\t '
-    # literals = { '=', '+', '-', '/', '*',
-    #              '==', '!=', '<', '<=', '>', '>=',
-    #              '(', ')', '[', ']', '{', '}', ',', ';'} 
     literals = {'(', ')', '[', ']', '{', '}', ',', ';'} 
     
     # Regular expression rules for tokens
@@ -60,12 +57,9 @@ class BasicParser(Parser):
     #tokens are passed from lexer to parser 
     tokens = BasicLexer.tokens 
   
-    # precedence = ( 
-    #     ('left', '+', '-'), 
-    #     ('left', '*', '/'), 
-    #     ('right', 'UMINUS'), 
-    # ) 
     precedence = (
+        ('left', PLUS, MINUS), 
+        ('left', TIMES, DIVIDE), 
         ('right', 'UMINUS'),
     )
     def __init__(self): 
@@ -213,7 +207,7 @@ class BasicExecute:
                 print('You can\'t multiply '+str(self.walkTree(node[1]))+' and '+str(self.walkTree(node[2]))+'!')
         elif node[0] == 'div':
             try:
-                return self.walkTree(node[1]) / self.walkTree(node[2]) 
+                return int(self.walkTree(node[1]) / self.walkTree(node[2]))
             except:
                 print('You can\'t divide '+str(self.walkTree(node[1]))+' by '+str(self.walkTree(node[2]))+'!')
         elif node[0] == 'lt':
