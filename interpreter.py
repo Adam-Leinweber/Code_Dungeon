@@ -2,7 +2,7 @@ from sly import Lexer
 from sly import Parser
 
 class BasicLexer(Lexer): 
-    tokens = { ID, NUMBER, IF, ELSE, WHILE, FOR, SAY,
+    tokens = { ID, NUMBER, STRING, IF, ELSE, WHILE, FOR, SAY,
                PLUS, MINUS, TIMES, DIVIDE, ASSIGN,
                EQ, LT, LEQ, GT, GEQ, NEQ } 
     ignore = '\t '
@@ -23,7 +23,7 @@ class BasicLexer(Lexer):
 
     # Base ID rule
     ID = r'[a-zA-Z_][a-zA-Z0-9_]*'
-    # STRING = r'\".*?\"'
+    STRING = r'\".*?\"'
     # Special cases
     ID['if'] = IF
     ID['else'] = ELSE
@@ -77,9 +77,9 @@ class BasicParser(Parser):
     def var_assign(self, p): 
         return ('var_assign', p.ID, p.expr) 
   
-    # @_('ID ASSIGN STRING') 
-    # def var_assign(self, p): 
-    #     return ('var_assign', p.ID, p.STRING) 
+    @_('ID ASSIGN STRING') 
+    def var_assign(self, p): 
+        return ('var_assign', p.ID, p.STRING) 
   
     @_('expr') 
     def statement(self, p): 
@@ -187,11 +187,14 @@ class BasicExecute:
             return node[1]
 
         if node[0] == 'say':
-            print(self.walkTree(node[1]))
+            if self.walkTree(node[1]) != None:
+                print(self.walkTree(node[1]))
             return node[1]
   
         if node[0] == 'add':
             try:
+                if type(self.walkTree(node[1])) == str and type(self.walkTree(node[2])) == str:
+                    return self.walkTree(node[1])[:-1] + self.walkTree(node[2])[1:]
                 return self.walkTree(node[1]) + self.walkTree(node[2])
             except:
                 print('You can\'t add '+str(self.walkTree(node[1]))+' and '+str(self.walkTree(node[2]))+'!')
