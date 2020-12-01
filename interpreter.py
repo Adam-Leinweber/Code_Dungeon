@@ -177,7 +177,6 @@ class BasicExecute:
         result = self.walkTree(tree) 
 
         self.return_value = result
-        print(self.return_value)
         # if result is not None and isinstance(result, int): 
         #     print(result)
         # if isinstance(result, str) and result[0] == '"': 
@@ -208,8 +207,8 @@ class BasicExecute:
             return node[1]
 
         if node[0] == 'say':
-            # if self.walkTree(node[1]) != None:
-            #     print(self.walkTree(node[1]))
+            if self.walkTree(node[1]) != None:
+                print(self.walkTree(node[1]))
             return node[1]
 
         if node[0] == 'index':
@@ -288,17 +287,29 @@ if __name__ == '__main__':
     # while reading:
     f = open('test_code.cd', 'r')
     lineno = 0
-    for line in f:
-        lineno += 1
-        text = line
+    file_lines = f.readlines()
+    while lineno < len(file_lines):
+        text = file_lines[lineno]
 
-        if line.replace(' ','')[0:2] == "if": # if we see an if statement 
-            text = line.replace('if', '')
+        if text.replace(' ','')[0:2] == "if": # if we see an if statement 
+            text = text.replace('if', '')
             tree = parser.parse(lexer.tokenize(text))
             if (BasicExecute(tree, env).return_value):
-                # go until we see end if                
-                print("YES")
-        
+                # just go
+                lineno += 1
+                continue
+            else:
+                # skip to end if
+                while True:
+                    lineno += 1
+                    line = file_lines[lineno]
+                    #print(line)
+                    if 'end if' in line:
+                        break
+        if 'end if' in text:
+            lineno += 1
+            continue
         elif text:
             tree = parser.parse(lexer.tokenize(text)) 
             BasicExecute(tree, env)
+        lineno += 1
