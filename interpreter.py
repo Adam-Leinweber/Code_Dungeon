@@ -2,7 +2,8 @@ from sly import Lexer
 from sly import Parser
 
 class BasicLexer(Lexer): 
-    tokens = { ID, NUMBER, STRING, IF, ELSE, WHILE, FOR, SAY,
+    tokens = { ID, NUMBER, STRING, #ITERABLE,
+               IF, ELSE, WHILE, SAY,
                PLUS, MINUS, TIMES, DIVIDE, ASSIGN,
                EQ, LT, LEQ, GT, GEQ, NEQ } 
     ignore = '\t '
@@ -24,11 +25,11 @@ class BasicLexer(Lexer):
     # Base ID rule
     ID = r'[a-zA-Z_][a-zA-Z0-9_]*'
     STRING = r'\".*?\"'
+    # ITERABLE = r'\[(\d,?)+\]'
     # Special cases
     ID['if'] = IF
     ID['else'] = ELSE
     ID['while'] = WHILE
-    ID['for'] = FOR
     ID['say'] = SAY
     
     # Number token 
@@ -80,10 +81,22 @@ class BasicParser(Parser):
     @_('ID ASSIGN STRING') 
     def var_assign(self, p): 
         return ('var_assign', p.ID, p.STRING) 
-  
+
+    # @_('ID ASSIGN ITERABLE') 
+    # def var_assign(self, p): 
+    #     return ('var_assign', p.ID, p.ITERABLE) 
+
+    # @_('index')
+    # def expr(self, p):
+    #     return p.index
+    
+    # @_('ITERABLE "[" NUMBER "]"')
+    # def index(self, p):
+    #     return ('index', p.ITERABLE, p.NUMBER)
+    
     @_('expr') 
     def statement(self, p): 
-        return (p.expr) 
+        return p.expr
 
     @_('term')
     def expr(self, p):
@@ -149,20 +162,28 @@ class BasicParser(Parser):
     def expr(self, p): 
         return ('num', p.NUMBER)
 
+    @_('STRING') 
+    def expr(self, p): 
+        return ('str', p.STRING)
+
     @_('SAY expr')
     def expr(self, p):
         return('say', p.expr)
             
 class BasicExecute:
-    
+    return_value = bool
     def __init__(self, tree, env): 
         self.env = env 
         result = self.walkTree(tree) 
-        if result is not None and isinstance(result, int): 
-            print(result) 
-        if isinstance(result, str) and result[0] == '"': 
-            print(result) 
-  
+
+        self.return_value = result
+        print(self.return_value)
+        # if result is not None and isinstance(result, int): 
+        #     print(result)
+        # if isinstance(result, str) and result[0] == '"': 
+        #     print(result)
+
+        
     def walkTree(self, node): 
   
         if isinstance(node, int): 
@@ -187,10 +208,13 @@ class BasicExecute:
             return node[1]
 
         if node[0] == 'say':
-            if self.walkTree(node[1]) != None:
-                print(self.walkTree(node[1]))
+            # if self.walkTree(node[1]) != None:
+            #     print(self.walkTree(node[1]))
             return node[1]
-  
+
+        if node[0] == 'index':
+            return node[1][node[2]]
+        
         if node[0] == 'add':
             try:
                 if type(self.walkTree(node[1])) == str and type(self.walkTree(node[2])) == str:
@@ -259,12 +283,22 @@ if __name__ == '__main__':
     lexer = BasicLexer() 
     parser = BasicParser() 
     env = {} 
-      
-    while True:           
-        try: 
-            text = input(' > ') 
-        except EOFError: 
-            break
-        if text: 
+
+    # reading = True
+    # while reading:
+    f = open('test_code.cd', 'r')
+    lineno = 0
+    for line in f:
+        lineno += 1
+        text = line
+
+        if line.replace(' ','')[0:2] == "if": # if we see an if statement 
+            text = line.replace('if', '')
+            tree = parser.parse(lexer.tokenize(text))
+            if (BasicExecute(tree, env).return_value):
+                # go until we see end if                
+                print("YES")
+        
+        elif text:
             tree = parser.parse(lexer.tokenize(text)) 
             BasicExecute(tree, env)

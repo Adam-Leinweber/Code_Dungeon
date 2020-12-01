@@ -1,0 +1,5 @@
+i = 6
+if i < 5
+   say "problem"
+end if
+say "right?"
