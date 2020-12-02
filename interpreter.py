@@ -3,7 +3,7 @@ from sly import Parser
 
 class BasicLexer(Lexer): 
     tokens = { ID, NUMBER, STRING, #ITERABLE,
-               IF, ELSE, WHILE, SAY,
+               ELSE, WHILE, SAY,
                PLUS, MINUS, TIMES, DIVIDE, ASSIGN,
                EQ, LT, LEQ, GT, GEQ, NEQ } 
     ignore = '\t '
@@ -27,7 +27,7 @@ class BasicLexer(Lexer):
     STRING = r'\".*?\"'
     # ITERABLE = r'\[(\d,?)+\]'
     # Special cases
-    ID['if'] = IF
+    #ID['if'] = IF
     ID['else'] = ELSE
     ID['while'] = WHILE
     ID['say'] = SAY
@@ -218,6 +218,10 @@ class BasicExecute:
             try:
                 if type(self.walkTree(node[1])) == str and type(self.walkTree(node[2])) == str:
                     return self.walkTree(node[1])[:-1] + self.walkTree(node[2])[1:]
+                if type(self.walkTree(node[1])) == str:
+                    return self.walkTree(node[1])[:-1] + str(self.walkTree(node[2]))+'\"'
+                if type(self.walkTree(node[2])) == str:
+                    return '\"'+str(self.walkTree(node[1])) + self.walkTree(node[2])[1:]
                 return self.walkTree(node[1]) + self.walkTree(node[2])
             except:
                 print('You can\'t add '+str(self.walkTree(node[1]))+' and '+str(self.walkTree(node[2]))+'!')
@@ -291,25 +295,38 @@ if __name__ == '__main__':
     while lineno < len(file_lines):
         text = file_lines[lineno]
 
+        # Handle IF
+        ignore_end_if = 0
         if text.replace(' ','')[0:2] == "if": # if we see an if statement 
+            ignore_end_if += 1
             text = text.replace('if', '')
             tree = parser.parse(lexer.tokenize(text))
-            if (BasicExecute(tree, env).return_value):
+            if (BasicExecute(tree, env).return_value): # if valid
                 # just go
                 lineno += 1
                 continue
-            else:
-                # skip to end if
+            else: # if invalid
+                # skip to corresponding end if
+                nested_counter = 0
                 while True:
                     lineno += 1
-                    line = file_lines[lineno]
-                    #print(line)
-                    if 'end if' in line:
+                    text = file_lines[lineno]
+                    if text.replace(' ','')[0:2] == "if": # if we see an if statement
+                        nested_counter += 1
+                    if 'end if' in text and nested_counter != 0:
+                        nested_counter -= 1
+                    elif 'end if' in text and nested_counter == 0:
                         break
-        if 'end if' in text:
+                continue
+        if 'end if' in text and ignore_end_if == 0:
+            ignore_end_if -= 1
             lineno += 1
             continue
-        elif text:
+        if 'end if' in text and ignore_end_if != 0:
+            lineno += 1
+            print("UNEXPECTED END IF AT LINE " + str(lineno))
+            continue
+        if text:
             tree = parser.parse(lexer.tokenize(text)) 
             BasicExecute(tree, env)
         lineno += 1

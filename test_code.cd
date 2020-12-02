@@ -1,9 +1,13 @@
-i = 2
-if i < 5
-a = 2
-v = 3
-say "problem"
-end if
-say "right?"
 
-say a 
+i = 2
+if i > 5
+   a = 1
+   if a < 3
+      say a
+      say "a < 3"
+   end if
+   say i
+   say "i > 5"
+end if
+
+say "right?"
